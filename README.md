@@ -27,10 +27,16 @@ Changing dependencies late costs 10x more than changing them before you write li
 2. **Audits CVEs and maintenance health in real-time** via `npm audit`, `pip-audit`, and the OSV.dev API
 3. **Issues a `stay_safe.md` certificate** (or triggers a redesign loop if blockers are found)
 
-```
-Planning → Audit → Certificate → Code → Post-scan Report
-    ^          |
-    └──────────┘  (redesign loop if BLOCKED)
+```mermaid
+graph TD
+    A[AI Agent starts coding] --> B[PLAN: list libs + threats]
+    B --> C[AUDIT: npm audit + pip-audit + OSV]
+    C --> D{CERTIFY?}
+    D -->|PASS| E[stay_safe.md ✓]
+    D -->|FAIL| F[REDESIGN]
+    F --> B
+    E --> G[CODE]
+    G --> H[POST-SCAN report]
 ```
 
 ## Why not just run npm audit at the end?

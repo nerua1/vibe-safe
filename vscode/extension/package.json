@@ -1,0 +1,90 @@
+{
+  "name": "vibesafe",
+  "displayName": "VibeSafe Security Pre-Flight",
+  "description": "Security pre-flight for AI vibe-coding agents. Audit dependencies for CVEs before you write a single line of integration code.",
+  "version": "1.0.0",
+  "publisher": "nerua1",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nerua1/vibe-safe"
+  },
+  "bugs": {
+    "url": "https://github.com/nerua1/vibe-safe/issues"
+  },
+  "homepage": "https://github.com/nerua1/vibe-safe#readme",
+  "icon": "icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Linters"
+  ],
+  "keywords": [
+    "security",
+    "vulnerability",
+    "cve",
+    "npm audit",
+    "pip-audit",
+    "dependencies",
+    "vibe-coding"
+  ],
+  "activationEvents": [
+    "onCommand:vibesafe.audit",
+    "onCommand:vibesafe.auditJson",
+    "onCommand:vibesafe.fullPreFlight",
+    "onCommand:vibesafe.viewCertificate"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vibesafe.audit",
+        "title": "VibeSafe: Audit Project",
+        "category": "VibeSafe"
+      },
+      {
+        "command": "vibesafe.auditJson",
+        "title": "VibeSafe: Audit Project (JSON output)",
+        "category": "VibeSafe"
+      },
+      {
+        "command": "vibesafe.fullPreFlight",
+        "title": "VibeSafe: Full Pre-Flight (audit + cert)",
+        "category": "VibeSafe"
+      },
+      {
+        "command": "vibesafe.viewCertificate",
+        "title": "VibeSafe: View Current Certificate",
+        "category": "VibeSafe"
+      }
+    ],
+    "configuration": {
+      "title": "VibeSafe",
+      "properties": {
+        "vibesafe.auditOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Run VibeSafe audit automatically on file save"
+        },
+        "vibesafe.certPath": {
+          "type": "string",
+          "default": "${workspaceFolder}/stay_safe.md",
+          "description": "Path where VibeSafe writes the stay_safe.md certificate"
+        },
+        "vibesafe.toolsPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to VibeSafe tools directory. If empty, extension will look for ../vibe-safe/tools relative to workspace or use bundled tools."
+        },
+        "vibesafe.mode": {
+          "type": "string",
+          "default": "interactive",
+          "enum": ["interactive", "silent", "blocking"],
+          "description": "How VibeSafe behaves: interactive (shows output panel), silent (runs in background), blocking (stops workflow on BLOCKED)"
+        }
+      }
+    }
+  }
+}
