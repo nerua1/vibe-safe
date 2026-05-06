@@ -245,3 +245,9 @@ False positives (library flagged as unsafe but actually fine for your use case) 
 MIT — see [LICENSE](LICENSE).
 
 Built for the vibe-coding era. Use it before your AI agent doesn't.
+
+---
+
+*Built by [nerua1](https://github.com/nerua1)*
+
+☕ **Support:** [PayPal.me/nerudek](https://www.paypal.me/nerudek) | [Dev.to](https://dev.to/nerua1)
