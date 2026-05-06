@@ -1,0 +1,93 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "VibeSafe: Audit Project",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "${workspaceFolder}/../vibe-safe/tools/audit.sh",
+        "${workspaceFolder}"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "problemMatcher": {
+        "owner": "vibesafe",
+        "pattern": {
+          "regexp": "^.*BLOCKED.*$",
+          "message": 0
+        }
+      },
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
+    },
+    {
+      "label": "VibeSafe: Audit (JSON output)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "${workspaceFolder}/../vibe-safe/tools/audit.sh",
+        "${workspaceFolder}",
+        "--json"
+      ],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "VibeSafe: Generate stay_safe.md",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "${workspaceFolder}/../vibe-safe/tools/stay-safe-gen.sh",
+        "${workspaceFolder}"
+      ],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "VibeSafe: Python Audit",
+      "type": "shell",
+      "command": "python3",
+      "args": [
+        "${workspaceFolder}/../vibe-safe/tools/audit.py",
+        "${workspaceFolder}"
+      ],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "VibeSafe: Full Pre-Flight (audit + cert)",
+      "type": "shell",
+      "command": "python3",
+      "args": [
+        "${workspaceFolder}/../vibe-safe/tools/audit.py",
+        "${workspaceFolder}",
+        "--generate-cert"
+      ],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    }
+  ]
+}

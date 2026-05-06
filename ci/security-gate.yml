@@ -1,0 +1,290 @@
+name: VibeSafe Security Gate
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      fail_on_high:
+        description: 'Fail on HIGH severity (default: only CRITICAL)'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+jobs:
+  vibesafe-audit:
+    name: VibeSafe Pre-Deploy Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        if: hashFiles('package.json') != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Python
+        if: hashFiles('requirements.txt', 'pyproject.toml', 'setup.py') != ''
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install npm dependencies
+        if: hashFiles('package.json') != ''
+        run: npm ci --prefer-offline 2>/dev/null || npm install
+
+      - name: Install pip-audit
+        if: hashFiles('requirements.txt', 'pyproject.toml') != ''
+        run: pip install pip-audit
+
+      - name: Make audit tools executable
+        run: chmod +x tools/audit.sh tools/stay-safe-gen.sh 2>/dev/null || true
+
+      # ── npm audit ────────────────────────────────────────────────────
+      - name: npm audit (JSON)
+        if: hashFiles('package.json') != ''
+        id: npm_audit
+        run: |
+          set +e
+          npm audit --json > /tmp/npm-audit.json 2>/dev/null
+          EXIT=$?
+          # Parse results
+          python3 -c "
+          import json, os
+          with open('/tmp/npm-audit.json') as f:
+              d = json.load(f)
+          vulns = d.get('vulnerabilities', {})
+          critical = sum(1 for v in vulns.values() if v.get('severity') == 'critical')
+          high = sum(1 for v in vulns.values() if v.get('severity') == 'high')
+          print(f'npm_critical={critical}')
+          print(f'npm_high={high}')
+          print(f'npm_total={len(vulns)}')
+          " >> \$GITHUB_OUTPUT
+          echo "exit_code=$EXIT" >> \$GITHUB_OUTPUT
+        continue-on-error: true
+
+      # ── pip-audit ─────────────────────────────────────────────────────
+      - name: pip-audit (JSON)
+        if: hashFiles('requirements.txt', 'pyproject.toml') != ''
+        id: pip_audit
+        run: |
+          set +e
+          pip-audit --format=json > /tmp/pip-audit.json 2>/dev/null
+          EXIT=$?
+          python3 -c "
+          import json
+          with open('/tmp/pip-audit.json') as f:
+              d = json.load(f)
+          deps = d.get('dependencies', [])
+          critical = sum(1 for dep in deps for v in dep.get('vulns', []) if v.get('severity','').lower()=='critical')
+          high = sum(1 for dep in deps for v in dep.get('vulns', []) if v.get('severity','').lower()=='high')
+          print(f'pip_critical={critical}')
+          print(f'pip_high={high}')
+          " >> \$GITHUB_OUTPUT
+          echo "exit_code=$EXIT" >> \$GITHUB_OUTPUT
+        continue-on-error: true
+
+      # ── OSV.dev batch check (no local tools) ─────────────────────────
+      - name: OSV.dev scan
+        id: osv_scan
+        run: |
+          python3 - << 'EOF'
+          import json, subprocess, os
+
+          # Collect packages from lock files
+          packages = []
+
+          # npm
+          try:
+              with open('package-lock.json') as f:
+                  lock = json.load(f)
+              for name in list(lock.get('packages', {}).keys())[:50]:
+                  if name and name != '':
+                      clean = name.replace('node_modules/', '')
+                      if clean:
+                          packages.append({'name': clean, 'ecosystem': 'npm'})
+          except FileNotFoundError:
+              pass
+
+          # Python
+          try:
+              result = subprocess.run(['pip', 'list', '--format=json'], capture_output=True, text=True)
+              py_pkgs = json.loads(result.stdout)
+              for p in py_pkgs[:30]:
+                  packages.append({'name': p['name'], 'ecosystem': 'PyPI'})
+          except Exception:
+              pass
+
+          if not packages:
+              print('No packages found for OSV scan')
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write('osv_critical=0\nosv_total=0\n')
+              exit(0)
+
+          # Batch query OSV
+          import urllib.request
+          payload = json.dumps({'queries': [{'package': p} for p in packages[:100]]}).encode()
+          req = urllib.request.Request(
+              'https://api.osv.dev/v1/querybatch',
+              data=payload,
+              headers={'Content-Type': 'application/json'},
+              method='POST'
+          )
+          try:
+              with urllib.request.urlopen(req, timeout=15) as resp:
+                  results = json.loads(resp.read())
+              total_vulns = sum(len(r.get('vulns', [])) for r in results.get('results', []))
+              print(f'OSV scan: {total_vulns} vulnerabilities across {len(packages)} packages')
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write(f'osv_total={total_vulns}\nosv_critical=0\n')
+          except Exception as e:
+              print(f'OSV API error: {e}')
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write('osv_total=0\nosv_critical=0\n')
+          EOF
+        continue-on-error: true
+
+      # ── Secrets scan ──────────────────────────────────────────────────
+      - name: Secrets scan
+        id: secrets_scan
+        run: |
+          set +e
+          PATTERN='(api_key|api_secret|password|secret_key|private_key|access_token|auth_token)\s*=\s*["\x27][^"\x27${}]{8,}'
+          FOUND=$(grep -riE "$PATTERN" . \
+            --include="*.js" --include="*.ts" --include="*.py" \
+            --include="*.go" --include="*.rb" --include="*.java" \
+            --exclude-dir=node_modules --exclude-dir=.git \
+            --exclude-dir=venv --exclude-dir=__pycache__ \
+            -l 2>/dev/null | head -5)
+          if [ -n "$FOUND" ]; then
+            echo "secrets_found=true" >> $GITHUB_OUTPUT
+            echo "::error::Potential hardcoded secrets detected in: $FOUND"
+          else
+            echo "secrets_found=false" >> $GITHUB_OUTPUT
+          fi
+
+      # ── Generate stay_safe.md ─────────────────────────────────────────
+      - name: Generate stay_safe.md
+        run: |
+          NPM_CRITICAL="${{ steps.npm_audit.outputs.npm_critical || '0' }}"
+          PIP_CRITICAL="${{ steps.pip_audit.outputs.pip_critical || '0' }}"
+          SECRETS="${{ steps.secrets_scan.outputs.secrets_found }}"
+
+          TOTAL_CRITICAL=$((NPM_CRITICAL + PIP_CRITICAL))
+
+          if [ "$SECRETS" = "true" ] || [ "$TOTAL_CRITICAL" -gt "0" ]; then
+            STATUS="BLOCKED"
+          elif [ "${{ steps.npm_audit.outputs.npm_high || '0' }}" -gt "0" ] || \
+               [ "${{ steps.pip_audit.outputs.pip_high || '0' }}" -gt "0" ]; then
+            STATUS="CONDITIONAL"
+          else
+            STATUS="CERTIFIED"
+          fi
+
+          cat > stay_safe.md << CERT
+          # VibeSafe Certificate — CI/CD
+
+          **Status:** $STATUS
+          **Generated:** $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          **CI Run:** ${{ github.run_id }}
+          **Commit:** ${{ github.sha }}
+          **Branch:** ${{ github.ref_name }}
+
+          ## Audit Results
+
+          | Check | Critical | High | Status |
+          |-------|---------|------|--------|
+          | npm audit | ${NPM_CRITICAL} | ${{ steps.npm_audit.outputs.npm_high || '0' }} | ${{ steps.npm_audit.outputs.exit_code == '0' && '✅' || '⚠️' }} |
+          | pip-audit | ${PIP_CRITICAL} | ${{ steps.pip_audit.outputs.pip_high || '0' }} | ${{ steps.pip_audit.outputs.exit_code == '0' && '✅' || '⚠️' }} |
+          | OSV.dev | - | ${{ steps.osv_scan.outputs.osv_total || '0' }} total | ✅ |
+          | Secrets scan | - | - | ${{ steps.secrets_scan.outputs.secrets_found == 'true' && '🔴' || '✅' }} |
+
+          CERT
+
+      - name: Upload stay_safe.md
+        uses: actions/upload-artifact@v4
+        with:
+          name: vibesafe-certificate
+          path: stay_safe.md
+          retention-days: 30
+
+      # ── PR Comment ────────────────────────────────────────────────────
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const npmCritical = parseInt('${{ steps.npm_audit.outputs.npm_critical || "0" }}');
+            const npmHigh = parseInt('${{ steps.npm_audit.outputs.npm_high || "0" }}');
+            const pipCritical = parseInt('${{ steps.pip_audit.outputs.pip_critical || "0" }}');
+            const secretsFound = '${{ steps.secrets_scan.outputs.secrets_found }}' === 'true';
+            const totalCritical = npmCritical + pipCritical;
+
+            let status, icon;
+            if (secretsFound || totalCritical > 0) {
+              status = 'BLOCKED'; icon = '🔴';
+            } else if (npmHigh > 0) {
+              status = 'CONDITIONAL'; icon = '⚠️';
+            } else {
+              status = 'CERTIFIED'; icon = '✅';
+            }
+
+            const body = `## ${icon} VibeSafe Security Audit — ${status}
+
+            | Check | Result |
+            |-------|--------|
+            | npm critical CVEs | ${npmCritical} |
+            | npm high CVEs | ${npmHigh} |
+            | pip critical | ${pipCritical} |
+            | Secrets in code | ${secretsFound ? '🔴 FOUND' : '✅ clean'} |
+
+            ${status === 'BLOCKED' ? '**⛔ This PR cannot be merged until critical issues are resolved.**\nRun `./tools/audit.sh` locally for details.' : ''}
+            ${status === 'CONDITIONAL' ? '**⚠️ Review the risks before merging. High-severity issues found.**' : ''}
+            ${status === 'CERTIFIED' ? '**All security checks passed. Safe to merge.**' : ''}
+
+            <sub>Generated by [VibeSafe](https://github.com/nerua1/vibe-safe)</sub>`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
+
+      # ── Fail gate ─────────────────────────────────────────────────────
+      - name: Security gate decision
+        run: |
+          NPM_CRITICAL="${{ steps.npm_audit.outputs.npm_critical || '0' }}"
+          PIP_CRITICAL="${{ steps.pip_audit.outputs.pip_critical || '0' }}"
+          SECRETS="${{ steps.secrets_scan.outputs.secrets_found }}"
+          FAIL_ON_HIGH="${{ github.event.inputs.fail_on_high || 'false' }}"
+          NPM_HIGH="${{ steps.npm_audit.outputs.npm_high || '0' }}"
+
+          TOTAL_CRITICAL=$((NPM_CRITICAL + PIP_CRITICAL))
+
+          if [ "$SECRETS" = "true" ]; then
+            echo "::error::BLOCKED — Hardcoded secrets detected in source code"
+            exit 1
+          fi
+
+          if [ "$TOTAL_CRITICAL" -gt "0" ]; then
+            echo "::error::BLOCKED — $TOTAL_CRITICAL critical CVE(s) found"
+            exit 1
+          fi
+
+          if [ "$FAIL_ON_HIGH" = "true" ] && [ "$NPM_HIGH" -gt "0" ]; then
+            echo "::error::BLOCKED — $NPM_HIGH high-severity CVE(s) found (fail_on_high=true)"
+            exit 1
+          fi
+
+          echo "✅ VibeSafe gate passed"

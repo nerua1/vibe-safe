@@ -1,0 +1,88 @@
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+package-lock.json
+yarn.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+.eggs/
+*.egg-info/
+dist/
+build/
+*.egg
+pip-log.txt
+pip-delete-this-directory.txt
+.pip-audit-cache/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+
+# Rust
+target/
+Cargo.lock
+
+# Audit outputs (project-local, not committed here)
+stay_safe.md
+blocked_report.md
+audit-cache/
+.audit-tmp/
+
+# Secrets / credentials (never commit these)
+.env
+.env.*
+*.pem
+*.key
+*.crt
+secrets.json
+credentials.json
+
+# Editor
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+.cursor/
+
+# Logs
+logs/
+*.log
+
+# Test output
+coverage/
+.nyc_output/
+htmlcov/
+.coverage
+.pytest_cache/
+.tox/
