@@ -2,6 +2,23 @@
 
 ## The Vibe Coding Problem
 
+```mermaid
+flowchart TD
+    A[AI Training Data<br/>months/years old] --> B[AI recommends<br/>outdated libraries]
+    B --> C[CVEs discovered<br/>after training cutoff]
+    C --> D[Architecture built<br/>around vulnerable deps]
+    D --> E{Options}
+    E -->|Without VibeSafe| F[Expensive redesign<br/>OR ship with CVEs]
+    E -->|With VibeSafe| G[Pre-flight catches<br/>before line 1]
+
+    style A fill:#ff6b6b,color:#fff
+    style B fill:#ffa502,color:#fff
+    style C fill:#ff6348,color:#fff
+    style D fill:#ff4757,color:#fff
+    style F fill:#ff0000,color:#fff
+    style G fill:#2ed573,color:#000
+```
+
 AI coding agents are fast. They can scaffold a full-stack app in minutes. But speed creates a blind spot: **AI agents don't know if the libraries they use are safe, maintained, or even alive.**
 
 ### Key Statistics
@@ -30,19 +47,45 @@ Old training data → Outdated library recommendations
 
 ### Why Traditional "Audit at the End" Fails
 
-```
-Without VibeSafe:
-  Day 1: AI builds 500-line app using left-pad v1.0 and express v3.x
-  Day 3: npm audit shows 12 CVEs, 3 critical
-  Day 3: Refactoring costs = entire Day 1 + Day 2 work
-  
-With VibeSafe:
-  Hour 1: Pre-flight catches express v3.x (EOL) and left-pad (abandoned)
-  Hour 1: Redesign to express v4.x + native string padding
-  Hour 1: Cost = 10 minutes, not 2 days
+```mermaid
+gantt
+    title Cost of "Audit at the End" vs VibeSafe Pre-Flight
+    dateFormat HH:mm
+    axisFormat %H:%M
+
+    section Without VibeSafe
+    AI builds app with bad deps   :a1, 00:00, 120min
+    npm audit reveals 12 CVEs     :milestone, 120min
+    Refactor to safe deps         :a2, after a1, 180min
+    Total: 5 hours                :milestone, 300min
+
+    section With VibeSafe
+    Pre-flight catches issues     :b1, 00:00, 1min
+    Redesign to safe deps         :b2, after b1, 10min
+    AI builds with clean deps     :b3, after b2, 120min
+    Total: ~2 hours               :milestone, 131min
 ```
 
-**Redesign is free before line 1. It's expensive after line 1000.**
+```mermaid
+flowchart LR
+    subgraph Before["Without VibeSafe"]
+        W1[Day 1: AI builds 500-line app
+using left-pad + express v3] --> W2[Day 3: npm audit shows
+12 CVEs, 3 critical]
+        W2 --> W3[Day 3-4: Refactoring costs
+= entire 2 days work]
+    end
+
+    subgraph After["With VibeSafe"]
+        V1[Hour 1: Pre-flight catches
+express v3 EOL + left-pad abandoned] --> V2[Hour 1: Redesign to
+express v4 + native padding]
+        V2 --> V3[Cost = 10 minutes]
+    end
+
+    style Before fill:#ff475720,stroke:#ff4757
+    style After fill:#2ed57320,stroke:#2ed573
+```
 
 ### Common AI-Recommended Libraries with Issues
 
@@ -63,12 +106,21 @@ These are libraries that appear frequently in AI-generated code but have had not
 
 ### The Supply Chain Reality
 
-```
-Your app
-  └── express@4.18.0
-        └── qs@6.11.0          ← prototype pollution fixed in 6.10.3
-        └── path-to-regexp@6.2.1 ← ReDoS fixed in 8.0.0
-              └── ...
+```mermaid
+flowchart TD
+    A[Your App] --> B[express@4.18.0]
+    B --> C[qs@6.11.0]
+    B --> D[path-to-regexp@6.2.1]
+    C --> E["prototype pollution
+fixed in 6.10.3"]
+    D --> F["ReDoS
+fixed in 8.0.0"]
+
+    style A fill:#4a90d9,color:#fff
+    style C fill:#ffa502,color:#000
+    style D fill:#ffa502,color:#000
+    style E fill:#ff4757,color:#fff
+    style F fill:#ff4757,color:#fff
 ```
 
 Your direct dependency might be fine. Its dependencies might not be.

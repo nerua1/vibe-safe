@@ -348,6 +348,11 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(statusBarItem);
   }
 
+  // Auto-run on project open (if configured)
+  if (config.get<boolean>('autoRunOnProjectOpen', false)) {
+    vscode.commands.executeCommand('vibesafe.audit');
+  }
+
   outputChannel.appendLine('[VibeSafe] All commands registered. Ready.');
 }
 

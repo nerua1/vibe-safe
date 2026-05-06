@@ -60,13 +60,33 @@
         "category": "VibeSafe"
       }
     ],
+    "keybindings": [
+      {
+        "command": "vibesafe.audit",
+        "key": "ctrl+shift+v",
+        "mac": "cmd+shift+v",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "vibesafe.fullPreFlight",
+        "key": "ctrl+shift+alt+v",
+        "mac": "cmd+shift+alt+v",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "vibesafe.viewCertificate",
+        "key": "ctrl+shift+v ctrl+c",
+        "mac": "cmd+shift+v cmd+c",
+        "when": "editorTextFocus"
+      }
+    ],
     "configuration": {
       "title": "VibeSafe",
       "properties": {
         "vibesafe.auditOnSave": {
           "type": "boolean",
-          "default": false,
-          "description": "Run VibeSafe audit automatically on file save"
+          "default": true,
+          "description": "Run VibeSafe audit automatically when package.json, requirements.txt, Pipfile, pyproject.toml, or go.mod is saved"
         },
         "vibesafe.certPath": {
           "type": "string",
@@ -83,6 +103,11 @@
           "default": "interactive",
           "enum": ["interactive", "silent", "blocking"],
           "description": "How VibeSafe behaves: interactive (shows output panel), silent (runs in background), blocking (stops workflow on BLOCKED)"
+        },
+        "vibesafe.autoRunOnProjectOpen": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically run VibeSafe audit when a project is opened"
         }
       }
     }

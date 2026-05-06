@@ -39,6 +39,39 @@ graph TD
     G --> H[POST-SCAN report]
 ```
 
+## VibeSafe Lifecycle (Detailed)
+
+```mermaid
+flowchart LR
+    subgraph PLAN["1. PLAN PHASE"]
+        A1[AI Agent lists<br/>intended libraries] --> A2[Generate<br/>dependency manifest]
+        A2 --> A3[Identify<br/>threat surface]
+    end
+
+    subgraph AUDIT["2. AUDIT PHASE"]
+        B1[npm audit / pip-audit] --> B2[OSV.dev API<br/>cross-ecosystem check]
+        B2 --> B3[Parse CVEs +<br/>maintenance health]
+    end
+
+    subgraph CERTIFY["3. CERTIFY PHASE"]
+        C1{Critical CVEs?} -->|No| C2[Issue stay_safe.md<br/>certificate]
+        C1 -->|Yes| C3{Unmaintained<br/>>2yr?}
+        C3 -->|Yes| C4[BLOCKED:<br/>replace library]
+        C3 -->|No| C5[WARN:<br/>suggest alternatives]
+    end
+
+    subgraph CODE["4. CODE PHASE"]
+        D1[AI Agent codes<br/>against certified deps] --> D2[On save:<br/>re-audit deps]
+        D2 --> D3[Post-scan report]
+    end
+
+    PLAN --> AUDIT
+    AUDIT --> CERTIFY
+    CERTIFY -->|PASS| CODE
+    CERTIFY -->|FAIL| PLAN
+    CODE -->|New dep added| PLAN
+```
+
 ## Why not just run npm audit at the end?
 
 Because by then, the architecture is built around the vulnerable library.
