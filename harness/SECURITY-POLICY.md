@@ -73,4 +73,4 @@ Always in **project root**. Never in subdirectory. Committed to git (it's docume
 
 ---
 
-*VibeSafe v1.0 — github.com/nerua1/vibe-safe*
+*VibeSafe v1.0 — github.com/nerudek/vibe-safe*

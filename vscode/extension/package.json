@@ -3,16 +3,16 @@
   "displayName": "VibeSafe Security Pre-Flight",
   "description": "Security pre-flight for AI vibe-coding agents. Audit dependencies for CVEs before you write a single line of integration code.",
   "version": "1.0.0",
-  "publisher": "nerua1",
+  "publisher": "nerudek",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nerua1/vibe-safe"
+    "url": "https://github.com/nerudek/vibe-safe"
   },
   "bugs": {
-    "url": "https://github.com/nerua1/vibe-safe/issues"
+    "url": "https://github.com/nerudek/vibe-safe/issues"
   },
-  "homepage": "https://github.com/nerua1/vibe-safe#readme",
+  "homepage": "https://github.com/nerudek/vibe-safe#readme",
   "icon": "icon.png",
   "engines": {
     "vscode": "^1.85.0"

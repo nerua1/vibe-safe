@@ -31,7 +31,7 @@ Security pre-flight for AI vibe-coding agents. Audit your dependencies for CVEs 
 The extension needs the VibeSafe audit scripts. Install them:
 
 ```bash
-git clone https://github.com/nerua1/vibe-safe
+git clone https://github.com/nerudek/vibe-safe
 ```
 
 By default, the extension looks for `../vibe-safe/tools/audit.sh` relative to your workspace root. You can override this in settings:
@@ -81,7 +81,7 @@ VibeSafe runs `audit.sh` against your workspace root, which:
 ## Building From Source
 
 ```bash
-git clone https://github.com/nerua1/vibe-safe
+git clone https://github.com/nerudek/vibe-safe
 cd vibe-safe/vscode/extension
 npm install
 npm run compile
@@ -91,14 +91,14 @@ npx vsce package
 
 ## Contributing
 
-PRs welcome! See the main [VibeSafe repo](https://github.com/nerua1/vibe-safe) for contribution guidelines.
+PRs welcome! See the main [VibeSafe repo](https://github.com/nerudek/vibe-safe) for contribution guidelines.
 
 ## License
 
-MIT — see [LICENSE](https://github.com/nerua1/vibe-safe/blob/main/LICENSE).
+MIT — see [LICENSE](https://github.com/nerudek/vibe-safe/blob/main/LICENSE).
 
 ---
 
 Built for the vibe-coding era. Catch CVEs before your AI agent writes the exploit.
 
-☕ **Support:** [PayPal.me/nerudek](https://www.paypal.me/nerudek) | [Dev.to](https://dev.to/nerua1)
+☕ **Support:** [PayPal.me/nerudek](https://www.paypal.me/nerudek) | [Dev.to](https://dev.to/nerudek)

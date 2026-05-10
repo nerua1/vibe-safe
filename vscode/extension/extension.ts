@@ -81,7 +81,7 @@ async function runAudit(
   if (!toolsPath || !fs.existsSync(path.join(toolsPath, 'audit.sh'))) {
     throw new Error(
       `VibeSafe audit.sh not found. Set vibesafe.toolsPath in settings or install vibe-safe.\n` +
-      `Clone: git clone https://github.com/nerua1/vibe-safe`
+      `Clone: git clone https://github.com/nerudek/vibe-safe`
     );
   }
 

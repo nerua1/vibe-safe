@@ -100,7 +100,7 @@ VibeSafe catches it **when changing is still free** — before a single line of 
 ## Quick start
 
 ```bash
-git clone https://github.com/nerua1/vibe-safe
+git clone https://github.com/nerudek/vibe-safe
 cd vibe-safe && chmod +x tools/audit.sh
 ./tools/audit.sh /path/to/your/project
 ```
@@ -219,7 +219,7 @@ VibeSafe does not fix the underlying ecosystem problem. It makes the audit happe
 
 ```bash
 # Clone
-git clone https://github.com/nerua1/vibe-safe
+git clone https://github.com/nerudek/vibe-safe
 cd vibe-safe
 
 # Make scripts executable
@@ -287,6 +287,6 @@ Built for the vibe-coding era. Use it before your AI agent doesn't.
 
 ---
 
-*Built by [nerua1](https://github.com/nerua1)*
+*Built by [nerudek](https://github.com/nerudek)*
 
-☕ **Support:** [PayPal.me/nerudek](https://www.paypal.me/nerudek) | [Dev.to](https://dev.to/nerua1)
+☕ **Support:** [PayPal.me/nerudek](https://www.paypal.me/nerudek) | [Dev.to](https://dev.to/nerudek)

@@ -4,7 +4,7 @@
 
 ```bash
 # Install the skill:
-claude plugin install https://github.com/nerua1/vibe-safe
+claude plugin install https://github.com/nerudek/vibe-safe
 
 # Or manually copy skill file:
 cp skills/vibe-safe.md ~/.claude/skills/vibe-safe.md
